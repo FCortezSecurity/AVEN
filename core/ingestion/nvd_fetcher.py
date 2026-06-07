@@ -4,9 +4,8 @@ import time
 import os
 from datetime import datetime, timedelta
 
-def fetch_recent_cves(config, db_path):
-    from core.ingestion.database import get_connection
 
+def fetch_recent_cves(config, db_path):
     api_key = os.getenv("NVD_API_KEY", "")
     base_url = config["nvd"]["base_url"]
     days_back = config["nvd"]["days_back"]
@@ -27,12 +26,27 @@ def fetch_recent_cves(config, db_path):
 
     all_cves = []
     total_results = None
+    max_retries = 3
 
     while True:
-        response = requests.get(base_url, params=params, headers=headers)
-        
-        if response.status_code != 200:
-            print(f"[NVD] Error: {response.status_code}")
+        retries = 0
+        response = None
+
+        while retries < max_retries:
+            response = requests.get(base_url, params=params, headers=headers)
+            if response.status_code == 200:
+                break
+            elif response.status_code == 429:
+                wait = 30 * (retries + 1)
+                print(f"[NVD] Rate limited. Waiting {wait}s...")
+                time.sleep(wait)
+                retries += 1
+            else:
+                print(f"[NVD] Error: {response.status_code}, stopping.")
+                break
+
+        if response is None or response.status_code != 200:
+            print("[NVD] Could not fetch page, stopping.")
             break
 
         data = response.json()
@@ -42,8 +56,10 @@ def fetch_recent_cves(config, db_path):
             print(f"[NVD] Total CVEs available: {total_results}")
 
         vulnerabilities = data.get("vulnerabilities", [])
-        all_cves.extend(vulnerabilities)
+        if not vulnerabilities:
+            break
 
+        all_cves.extend(vulnerabilities)
         print(f"[NVD] Fetched {len(all_cves)} / {total_results}")
 
         if len(all_cves) >= total_results:
@@ -55,6 +71,7 @@ def fetch_recent_cves(config, db_path):
     saved = save_cves(all_cves, db_path)
     print(f"[NVD] Saved {saved} CVEs to database")
     return saved
+
 
 def save_cves(vulnerabilities, db_path):
     from core.ingestion.database import get_connection
