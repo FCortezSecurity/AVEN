@@ -8,6 +8,8 @@ from core.ingestion.kev_fetcher import fetch_kev
 from core.hunting.github_hunter import hunt_github
 from core.hunting.exploitdb_hunter import hunt_exploitdb
 from core.hunting.maturity_classifier import classify_all
+from core.scoring.epss_fetcher import fetch_epss_scores
+from core.scoring.risk_engine import score_all_cves
 
 load_dotenv()
 console = Console()
@@ -39,10 +41,25 @@ def full_pipeline_run(config):
     console.print("[cyan]Classifying exploit maturity...[/cyan]")
     maturity_results = classify_all(db_path)
 
+    console.print("[cyan]Fetching EPSS scores...[/cyan]")
+    epss_scores = fetch_epss_scores(db_path)
+
+    console.print("[cyan]Running risk scoring engine...[/cyan]")
+    # Asset matches will be wired in Phase 5 — empty set for now
+    asset_matches = set()
+    tier_counts = score_all_cves(config, db_path, epss_scores, maturity_results, asset_matches)
+
     console.print(f"[bold green]Pipeline Complete.[/bold green]")
-    console.print(f"CVEs: {cves_saved} | KEV: {kev_saved} | "
-                  f"GitHub PoCs: {github_findings} | "
-                  f"ExploitDB: {exploitdb_findings}")
+    console.print(
+        f"CVEs: {cves_saved} | KEV: {kev_saved} | "
+        f"GitHub PoCs: {github_findings} | ExploitDB: {exploitdb_findings}"
+    )
+    console.print(
+        f"[bold red]CRITICAL: {tier_counts['CRITICAL']}[/bold red] | "
+        f"[red]HIGH: {tier_counts['HIGH']}[/red] | "
+        f"[yellow]MEDIUM: {tier_counts['MEDIUM']}[/yellow] | "
+        f"[green]LOW: {tier_counts['LOW']}[/green]"
+    )
 
 if __name__ == "__main__":
     config = load_config()
