@@ -59,7 +59,7 @@ def init_db(db_path):
 
         CREATE TABLE IF NOT EXISTS scores (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            cve_id TEXT,
+            cve_id TEXT UNIQUE,
             risk_score REAL,
             risk_tier TEXT,
             cvss_component REAL,
