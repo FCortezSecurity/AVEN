@@ -1,0 +1,82 @@
+[
+  {
+    "asset_id": "WEB-001",
+    "hostname": "prod-web-01",
+    "os": "Ubuntu 22.04",
+    "software": ["nginx 1.24", "openssl 3.0.2", "python 3.11", "curl 7.88"],
+    "environment": "production",
+    "criticality": "high"
+  },
+  {
+    "asset_id": "WEB-002",
+    "hostname": "prod-web-02",
+    "os": "Ubuntu 22.04",
+    "software": ["apache 2.4.57", "openssl 3.0.2", "php 8.2", "curl 7.88"],
+    "environment": "production",
+    "criticality": "high"
+  },
+  {
+    "asset_id": "DB-001",
+    "hostname": "prod-db-01",
+    "os": "Windows Server 2022",
+    "software": ["mssql 2019", "openssl 1.1.1", "powershell 7.3"],
+    "environment": "production",
+    "criticality": "critical"
+  },
+  {
+    "asset_id": "DB-002",
+    "hostname": "prod-db-02",
+    "os": "Ubuntu 22.04",
+    "software": ["postgresql 15", "openssl 3.0.2", "python 3.11"],
+    "environment": "production",
+    "criticality": "critical"
+  },
+  {
+    "asset_id": "APP-001",
+    "hostname": "prod-app-01",
+    "os": "Red Hat Enterprise Linux 9",
+    "software": ["java 17", "tomcat 10.1", "openssl 3.0.7", "log4j 2.17"],
+    "environment": "production",
+    "criticality": "high"
+  },
+  {
+    "asset_id": "APP-002",
+    "hostname": "dev-app-01",
+    "os": "Ubuntu 22.04",
+    "software": ["node 20", "npm 10", "python 3.11", "git 2.40"],
+    "environment": "development",
+    "criticality": "medium"
+  },
+  {
+    "asset_id": "FW-001",
+    "hostname": "prod-firewall-01",
+    "os": "FortiOS 7.4",
+    "software": ["fortios 7.4", "openssl 1.1.1"],
+    "environment": "production",
+    "criticality": "critical"
+  },
+  {
+    "asset_id": "VPN-001",
+    "hostname": "prod-vpn-01",
+    "os": "Ubuntu 22.04",
+    "software": ["openvpn 2.6", "openssl 3.0.2", "strongswan 5.9"],
+    "environment": "production",
+    "criticality": "high"
+  },
+  {
+    "asset_id": "MON-001",
+    "hostname": "prod-monitor-01",
+    "os": "Ubuntu 22.04",
+    "software": ["grafana 10.0", "prometheus 2.45", "python 3.11", "curl 7.88"],
+    "environment": "production",
+    "criticality": "medium"
+  },
+  {
+    "asset_id": "WIN-001",
+    "hostname": "workstation-01",
+    "os": "Windows 11",
+    "software": ["chrome 120", "office 365", "powershell 5.1", "dotnet 6.0"],
+    "environment": "corporate",
+    "criticality": "medium"
+  }
+]

@@ -10,6 +10,7 @@ from core.hunting.exploitdb_hunter import hunt_exploitdb
 from core.hunting.maturity_classifier import classify_all
 from core.scoring.epss_fetcher import fetch_epss_scores
 from core.scoring.risk_engine import score_all_cves
+from core.correlation.asset_correlator import correlate_all
 
 load_dotenv()
 console = Console()
@@ -41,18 +42,20 @@ def full_pipeline_run(config):
     console.print("[cyan]Classifying exploit maturity...[/cyan]")
     maturity_results = classify_all(db_path)
 
+    console.print("[cyan]Correlating CVEs against asset inventory...[/cyan]")
+    asset_matches = correlate_all(db_path)
+
     console.print("[cyan]Fetching EPSS scores...[/cyan]")
     epss_scores = fetch_epss_scores(db_path)
 
     console.print("[cyan]Running risk scoring engine...[/cyan]")
-    # Asset matches will be wired in Phase 5 — empty set for now
-    asset_matches = set()
     tier_counts = score_all_cves(config, db_path, epss_scores, maturity_results, asset_matches)
 
     console.print(f"[bold green]Pipeline Complete.[/bold green]")
     console.print(
         f"CVEs: {cves_saved} | KEV: {kev_saved} | "
-        f"GitHub PoCs: {github_findings} | ExploitDB: {exploitdb_findings}"
+        f"GitHub PoCs: {github_findings} | ExploitDB: {exploitdb_findings} | "
+        f"Asset Matches: {len(asset_matches)}"
     )
     console.print(
         f"[bold red]CRITICAL: {tier_counts['CRITICAL']}[/bold red] | "
