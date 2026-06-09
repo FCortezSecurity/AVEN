@@ -3,6 +3,7 @@ import time
 import os
 import sys
 from datetime import datetime
+from alerts.slack_alerts import check_and_alert, send_pipeline_summary
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -18,14 +19,12 @@ def load_config():
     with open("config.yaml", "r") as f:
         return yaml.safe_load(f)
 
+from alerts.slack_alerts import check_and_alert, send_pipeline_summary
+
 def run_pipeline():
     from core.ingestion.database import init_db
     from core.ingestion.nvd_fetcher import fetch_recent_cves
-    from core.ingestion.kev_fetcher import fetch_kev
-    from core.hunting.github_hunter import hunt_github
-    from core.hunting.exploitdb_hunter import hunt_exploitdb
-    from core.hunting.maturity_classifier import classify_all
-    from core.scoring.epss_fetcher import fetch_epss_scores
+    # ... all your other imports ...
     from core.scoring.risk_engine import score_all_cves
     from core.correlation.asset_correlator import correlate_all
     from core.reporting.executive_report import generate_executive_report
@@ -39,6 +38,7 @@ def run_pipeline():
     console.print(f"[bold cyan]AVEN Run Started: {start_time.strftime('%Y-%m-%d %H:%M UTC')}[/bold cyan]")
     console.print(f"[bold cyan]{'='*60}[/bold cyan]\n")
 
+tier_counts = score_all_cves(...)
     try:
         init_db(db_path)
 
