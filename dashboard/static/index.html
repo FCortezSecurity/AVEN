@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AVEN Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; color: #e6edf3; font-family: 'Segoe UI', system-ui, sans-serif; }
+
+  .header {
+    background: #161b22;
+    border-bottom: 1px solid #30363d;
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header h1 { font-size: 20px; font-weight: 600; color: #58a6ff; letter-spacing: 2px; }
+  .header .subtitle { font-size: 12px; color: #8b949e; margin-top: 2px; }
+  .last-run { font-size: 12px; color: #8b949e; }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    padding: 24px 32px 0;
+  }
+  .stat-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+  }
+  .stat-card .value { font-size: 32px; font-weight: 700; }
+  .stat-card .label { font-size: 12px; color: #8b949e; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+  .critical { color: #f85149; }
+  .high { color: #ff7b72; }
+  .medium { color: #d29922; }
+  .low { color: #3fb950; }
+  .blue { color: #58a6ff; }
+
+  .filters {
+    padding: 20px 32px 0;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 6px 16px;
+    border-radius: 6px;
+    border: 1px solid #30363d;
+    background: #161b22;
+    color: #e6edf3;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+  .filter-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+  .filter-btn.active { background: #1f6feb; border-color: #1f6feb; color: white; }
+
+  .main { padding: 20px 32px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: #161b22;
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #8b949e;
+    border-bottom: 1px solid #30363d;
+    cursor: pointer;
+  }
+  th:hover { color: #58a6ff; }
+  td { padding: 10px 12px; border-bottom: 1px solid #21262d; }
+  tr:hover { background: #161b22; cursor: pointer; }
+
+  .tier-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .tier-CRITICAL { background: #3d1a1a; color: #f85149; border: 1px solid #f85149; }
+  .tier-HIGH { background: #2d1a1a; color: #ff7b72; border: 1px solid #ff7b72; }
+  .tier-MEDIUM { background: #2d2205; color: #d29922; border: 1px solid #d29922; }
+  .tier-LOW { background: #0f2a1a; color: #3fb950; border: 1px solid #3fb950; }
+
+  .maturity-ACTIVE { color: #f85149; font-weight: 600; }
+  .maturity-WEAPONIZED { color: #ff7b72; }
+  .maturity-POC { color: #d29922; }
+  .maturity-THEORETICAL { color: #8b949e; }
+
+  .icon { font-size: 14px; }
+
+  /* Detail Panel */
+  .panel-overlay {
+    display: none;
+    position: fixed;
+    top: 0; right: 0; bottom: 0; left: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 100;
+  }
+  .panel-overlay.open { display: block; }
+  .panel {
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: 520px;
+    background: #161b22;
+    border-left: 1px solid #30363d;
+    overflow-y: auto;
+    z-index: 101;
+    padding: 24px;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+  }
+  .panel.open { transform: translateX(0); }
+  .panel-close {
+    position: absolute;
+    top: 16px; right: 16px;
+    background: none;
+    border: none;
+    color: #8b949e;
+    font-size: 20px;
+    cursor: pointer;
+  }
+  .panel-close:hover { color: #e6edf3; }
+  .panel h2 { font-size: 16px; color: #58a6ff; margin-bottom: 16px; padding-right: 32px; }
+  .detail-row { margin-bottom: 12px; }
+  .detail-label { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .detail-value { font-size: 13px; }
+  .detail-desc { font-size: 13px; color: #8b949e; line-height: 1.6; }
+  .section-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #8b949e;
+    border-bottom: 1px solid #30363d;
+    padding-bottom: 8px;
+    margin: 20px 0 12px;
+  }
+  .code-block {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 12px;
+    font-family: monospace;
+    font-size: 11px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: #7ee787;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .poc-item {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+  .poc-item a { color: #58a6ff; text-decoration: none; }
+  .poc-item a:hover { text-decoration: underline; }
+  .asset-item {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+  .score-bar-wrap { margin-top: 4px; }
+  .score-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: #21262d;
+    margin-top: 4px;
+  }
+  .score-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+
+  .loading { text-align: center; padding: 60px; color: #8b949e; }
+  .empty { text-align: center; padding: 40px; color: #8b949e; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>⚡ AVEN</h1>
+    <div class="subtitle">Autonomous Vulnerability & Exploit Notification Engine</div>
+  </div>
+  <div class="last-run" id="last-run">Loading...</div>
+</div>
+
+<div class="stats-grid" id="stats-grid">
+  <div class="stat-card"><div class="value blue" id="stat-total">—</div><div class="label">CVEs Analyzed</div></div>
+  <div class="stat-card"><div class="value critical" id="stat-critical">—</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="value high" id="stat-high">—</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="value medium" id="stat-medium">—</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="value low" id="stat-low">—</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="value blue" id="stat-kev">—</div><div class="label">KEV Entries</div></div>
+  <div class="stat-card"><div class="value blue" id="stat-pocs">—</div><div class="label">PoCs Found</div></div>
+  <div class="stat-card"><div class="value blue" id="stat-assets">—</div><div class="label">Assets Exposed</div></div>
+</div>
+
+<div class="filters">
+  <button class="filter-btn active" onclick="filterCVEs('all', this)">All</button>
+  <button class="filter-btn" onclick="filterCVEs('CRITICAL', this)">Critical</button>
+  <button class="filter-btn" onclick="filterCVEs('HIGH', this)">High</button>
+  <button class="filter-btn" onclick="filterCVEs('MEDIUM', this)">Medium</button>
+  <button class="filter-btn" onclick="filterCVEs('LOW', this)">Low</button>
+</div>
+
+<div class="main">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>CVE ID</th>
+          <th>Score</th>
+          <th>Tier</th>
+          <th>CVSS</th>
+          <th>EPSS</th>
+          <th>Maturity</th>
+          <th>KEV</th>
+          <th>Asset Hit</th>
+          <th>Vendor / Product</th>
+        </tr>
+      </thead>
+      <tbody id="cve-table-body">
+        <tr><td colspan="9" class="loading">Loading CVE data...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Detail Panel -->
+<div class="panel-overlay" id="overlay" onclick="closePanel()"></div>
+<div class="panel" id="detail-panel">
+  <button class="panel-close" onclick="closePanel()">✕</button>
+  <div id="panel-content"></div>
+</div>
+
+<script>
+let allCVEs = [];
+
+async function loadStats() {
+  const res = await fetch('/api/stats');
+  const data = await res.json();
+
+  document.getElementById('stat-total').textContent = data.total_cves.toLocaleString();
+  document.getElementById('stat-critical').textContent = (data.tiers.CRITICAL || 0).toLocaleString();
+  document.getElementById('stat-high').textContent = (data.tiers.HIGH || 0).toLocaleString();
+  document.getElementById('stat-medium').textContent = (data.tiers.MEDIUM || 0).toLocaleString();
+  document.getElementById('stat-low').textContent = (data.tiers.LOW || 0).toLocaleString();
+  document.getElementById('stat-kev').textContent = data.total_kev.toLocaleString();
+  document.getElementById('stat-pocs').textContent = data.total_pocs.toLocaleString();
+  document.getElementById('stat-assets').textContent = data.asset_matched.toLocaleString();
+
+  if (data.last_run && data.last_run.started_at) {
+    const d = new Date(data.last_run.started_at);
+    document.getElementById('last-run').textContent = `Last run: ${d.toUTCString()}`;
+  }
+}
+
+async function loadCVEs(tier = null) {
+  const url = tier && tier !== 'all' ? `/api/cves?tier=${tier}&limit=200` : '/api/cves?limit=200';
+  const res = await fetch(url);
+  allCVEs = await res.json();
+  renderTable(allCVEs);
+}
+
+function renderTable(cves) {
+  const tbody = document.getElementById('cve-table-body');
+  if (!cves.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="empty">No CVEs found for this filter.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = cves.map(cve => {
+    const scoreColor = cve.risk_score >= 80 ? '#f85149' : cve.risk_score >= 60 ? '#ff7b72' : cve.risk_score >= 40 ? '#d29922' : '#3fb950';
+    const epss = cve.epss_score ? (cve.epss_score * 100).toFixed(1) + '%' : 'N/A';
+    const vendor = cve.vendor ? `${cve.vendor} ${cve.product || ''}` : '<span style="color:#8b949e">—</span>';
+
+    return `<tr onclick="showDetail('${cve.cve_id}')">
+      <td><strong style="color:#58a6ff">${cve.cve_id}</strong></td>
+      <td>
+        <strong style="color:${scoreColor}">${cve.risk_score}</strong>
+        <div class="score-bar"><div class="score-bar-fill" style="width:${cve.risk_score}%;background:${scoreColor}"></div></div>
+      </td>
+      <td><span class="tier-badge tier-${cve.risk_tier}">${cve.risk_tier}</span></td>
+      <td>${cve.cvss_score || '—'}</td>
+      <td>${epss}</td>
+      <td><span class="maturity-${cve.maturity_level}">${cve.maturity_level}</span></td>
+      <td>${cve.in_kev ? '⚠️' : '—'}</td>
+      <td>${cve.asset_match ? '🎯' : '—'}</td>
+      <td style="color:#8b949e;font-size:12px">${vendor}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterCVEs(tier, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadCVEs(tier === 'all' ? null : tier);
+}
+
+async function showDetail(cveId) {
+  const res = await fetch(`/api/cves/${cveId}`);
+  const cve = await res.json();
+
+  const mitreTech = getMitre(cve.cwe);
+  const scoreColor = cve.risk_score >= 80 ? '#f85149' : cve.risk_score >= 60 ? '#ff7b72' : cve.risk_score >= 40 ? '#d29922' : '#3fb950';
+
+  let html = `
+    <h2>${cve.cve_id}</h2>
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <span class="tier-badge tier-${cve.risk_tier}">${cve.risk_tier}</span>
+      <span class="tier-badge" style="background:#161b22;border-color:#30363d">
+        Score: <strong style="color:${scoreColor}">${cve.risk_score}/100</strong>
+      </span>
+      <span class="maturity-${cve.maturity_level} tier-badge" style="background:#161b22;border-color:#30363d">${cve.maturity_level}</span>
+    </div>
+
+    <div class="detail-row">
+      <div class="detail-label">Description</div>
+      <div class="detail-desc">${cve.description || 'No description available.'}</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+      <div class="detail-row">
+        <div class="detail-label">CVSS Score</div>
+        <div class="detail-value">${cve.cvss_score || 'N/A'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">EPSS Score</div>
+        <div class="detail-value">${cve.epss_score ? (cve.epss_score * 100).toFixed(2) + '%' : 'N/A'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">CWE</div>
+        <div class="detail-value">${cve.cwe || 'N/A'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">In CISA KEV</div>
+        <div class="detail-value">${cve.in_kev ? '⚠️ Yes' : 'No'}</div>
+      </div>
+      ${cve.vendor ? `
+      <div class="detail-row">
+        <div class="detail-label">Vendor</div>
+        <div class="detail-value">${cve.vendor}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Product</div>
+        <div class="detail-value">${cve.product || 'N/A'}</div>
+      </div>` : ''}
+    </div>
+
+    <div class="section-title">MITRE ATT&CK</div>
+    <div class="detail-row">
+      <div class="detail-value">
+        <strong style="color:#58a6ff">${mitreTech.technique}</strong> — ${mitreTech.name}
+      </div>
+    </div>
+  `;
+
+  if (cve.poc_findings && cve.poc_findings.length) {
+    html += `<div class="section-title">PoC Evidence (${cve.poc_findings.length})</div>`;
+    cve.poc_findings.forEach(p => {
+      html += `<div class="poc-item">
+        <div><strong>${p.source}</strong> ${p.stars ? `⭐ ${p.stars}` : ''}</div>
+        <div><a href="${p.url}" target="_blank">${p.title || p.url}</a></div>
+      </div>`;
+    });
+  }
+
+  if (cve.asset_matches && cve.asset_matches.length) {
+    html += `<div class="section-title">Affected Assets (${cve.asset_matches.length})</div>`;
+    cve.asset_matches.forEach(a => {
+      html += `<div class="asset-item">
+        <div><strong style="color:#ff7b72">${a.asset_hostname}</strong> <span style="color:#8b949e">(${a.asset_id})</span></div>
+        <div style="color:#8b949e;margin-top:4px">${a.match_reason}</div>
+      </div>`;
+    });
+  }
+
+  if (cve.cvss_vector) {
+    html += `<div class="section-title">CVSS Vector</div>
+    <div class="code-block">${cve.cvss_vector}</div>`;
+  }
+
+  document.getElementById('panel-content').innerHTML = html;
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('detail-panel').classList.add('open');
+}
+
+function closePanel() {
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('detail-panel').classList.remove('open');
+}
+
+function getMitre(cwe) {
+  const map = {
+    'CWE-78':  {technique:'T1059', name:'Command and Scripting Interpreter'},
+    'CWE-79':  {technique:'T1189', name:'Drive-by Compromise'},
+    'CWE-89':  {technique:'T1190', name:'Exploit Public-Facing Application'},
+    'CWE-22':  {technique:'T1083', name:'File and Directory Discovery'},
+    'CWE-94':  {technique:'T1059', name:'Command and Scripting Interpreter'},
+    'CWE-119': {technique:'T1203', name:'Exploitation for Client Execution'},
+    'CWE-269': {technique:'T1068', name:'Exploitation for Privilege Escalation'},
+    'CWE-287': {technique:'T1078', name:'Valid Accounts'},
+    'CWE-306': {technique:'T1078', name:'Valid Accounts'},
+    'CWE-400': {technique:'T1499', name:'Endpoint Denial of Service'},
+    'CWE-416': {technique:'T1203', name:'Exploitation for Client Execution'},
+    'CWE-502': {technique:'T1059', name:'Command and Scripting Interpreter'},
+    'CWE-798': {technique:'T1552', name:'Unsecured Credentials'},
+  };
+  return map[cwe] || {technique:'T1190', name:'Exploit Public-Facing Application'};
+}
+
+// Init
+loadStats();
+loadCVEs();
+setInterval(loadStats, 60000);
+</script>
+</body>
+</html>
