@@ -11,6 +11,8 @@ from core.hunting.maturity_classifier import classify_all
 from core.scoring.epss_fetcher import fetch_epss_scores
 from core.scoring.risk_engine import score_all_cves
 from core.correlation.asset_correlator import correlate_all
+from core.reporting.executive_report import generate_executive_report
+from core.reporting.engineer_report import generate_engineer_report
 
 load_dotenv()
 console = Console()
@@ -51,6 +53,10 @@ def full_pipeline_run(config):
     console.print("[cyan]Running risk scoring engine...[/cyan]")
     tier_counts = score_all_cves(config, db_path, epss_scores, maturity_results, asset_matches)
 
+    console.print("[cyan]Generating reports...[/cyan]")
+    exec_path, _ = generate_executive_report(db_path)
+    eng_path, _ = generate_engineer_report(db_path)
+
     console.print(f"[bold green]Pipeline Complete.[/bold green]")
     console.print(
         f"CVEs: {cves_saved} | KEV: {kev_saved} | "
@@ -63,6 +69,8 @@ def full_pipeline_run(config):
         f"[yellow]MEDIUM: {tier_counts['MEDIUM']}[/yellow] | "
         f"[green]LOW: {tier_counts['LOW']}[/green]"
     )
+    console.print(f"[cyan]Executive report: {exec_path}[/cyan]")
+    console.print(f"[cyan]Engineer report:  {eng_path}[/cyan]")
 
 if __name__ == "__main__":
     config = load_config()
