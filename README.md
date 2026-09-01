@@ -147,7 +147,7 @@ AVEN/
 ## Quick Start
 
 ```bash
-git clone https://github.com/cpt-ferna02/AVEN.git
+git clone https://github.com/FCortezSecurity/AVEN.git
 cd AVEN
 python3 -m venv venv
 source venv/bin/activate
@@ -312,4 +312,4 @@ Built by Fernando Cortez as a capstone security engineering portfolio
 project. Targeting Security Engineer roles with a focus on vulnerability
 intelligence, detection engineering, and security automation.
 
-[GitHub](https://github.com/cpt-ferna02)
+[GitHub](https://github.com/FCortezSecurity)
