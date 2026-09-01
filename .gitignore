@@ -7,3 +7,4 @@ data/cache/
 data/db/
 output/
 *.log
+aven.pid
